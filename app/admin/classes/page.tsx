@@ -118,6 +118,7 @@ export default function AdminClassesPage() {
   const [isDeletingPastClasses, setIsDeletingPastClasses] = useState(false)
   const [classToDelete, setClassToDelete] = useState<any>(null)
   const [errorMessage, setErrorMessage] = useState("")
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isManageBookingsOpen, setIsManageBookingsOpen] = useState(false)
@@ -142,6 +143,7 @@ export default function AdminClassesPage() {
       // Load data
       fetchClasses();
       fetchUsers();
+      fetchNotificationCount();
     }
   }, [user, router])
   
@@ -189,6 +191,19 @@ export default function AdminClassesPage() {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  // Fetch unread notifications count
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await fetch('/api/admin/notifications?unreadOnly=true');
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadNotifications(data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
     }
   };
 
@@ -542,7 +557,7 @@ export default function AdminClassesPage() {
   }
 
   return (
-    <AdminLayout user={user}>
+    <AdminLayout user={user} unreadNotifications={unreadNotifications}>
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <div>

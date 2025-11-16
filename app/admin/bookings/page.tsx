@@ -136,6 +136,7 @@ export default function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
@@ -151,6 +152,7 @@ export default function AdminBookingsPage() {
       router.push("/dashboard");
     } else if (user && user.role === "admin") {
       fetchBookings();
+      fetchNotificationCount();
     }
   }, [user, router])
 
@@ -245,13 +247,13 @@ export default function AdminBookingsPage() {
         </div>
         
         {/* Desktop sidebar */}
-        <AdminSidebar user={user} />
+        <AdminSidebar user={user} unreadNotifications={unreadNotifications} />
         
         {/* Mobile header */}
         <MobileHeader user={user} setIsMobileMenuOpen={setIsMobileMenuOpen} />
         
         {/* Mobile menu */}
-        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} user={user} />
+        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} user={user} unreadNotifications={unreadNotifications} />
 
         {/* Main content */}
         <main className="flex-1 container max-w-6xl mx-auto lg:pl-64 py-8 sm:py-12 px-4 relative z-10">
