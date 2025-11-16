@@ -1095,6 +1095,94 @@ export default function AdminDashboardPage() {
                         </span>
                       )}
                     </Button>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const authToken = document.cookie.split('; ')
+                            .find(row => row.startsWith('auth_token='))
+                            ?.split('=')[1] || localStorage.getItem('auth_token');
+                            
+                          const response = await fetch('/api/admin/test-notifications', {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${authToken}`,
+                              'Content-Type': 'application/json'
+                            }
+                          });
+                          
+                          const data = await response.json();
+                          
+                          if (response.ok) {
+                            toast({
+                              title: "Test Notifications Created!",
+                              description: `${data.details.totalNotifications} notifications created for ${data.details.adminCount} admins`,
+                              variant: "default"
+                            });
+                            
+                            // Refresh the notification count
+                            fetchNotificationCount();
+                          } else {
+                            throw new Error(data.error || 'Failed to create test notifications');
+                          }
+                        } catch (error) {
+                          console.error('Error creating test notifications:', error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to create test notifications",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                      variant="outline"
+                      className="bg-transparent border border-blue-500/50 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 text-xs sm:text-sm"
+                    >
+                      <Bell className="h-3 w-3 mr-1" />
+                      Test Notifications
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const authToken = document.cookie.split('; ')
+                            .find(row => row.startsWith('auth_token='))
+                            ?.split('=')[1] || localStorage.getItem('auth_token');
+                            
+                          const response = await fetch('/api/admin/test-notifications', {
+                            method: 'DELETE',
+                            headers: {
+                              'Authorization': `Bearer ${authToken}`,
+                              'Content-Type': 'application/json'
+                            }
+                          });
+                          
+                          const data = await response.json();
+                          
+                          if (response.ok) {
+                            toast({
+                              title: "Notifications Cleared",
+                              description: `${data.deletedCount} notifications deleted`,
+                              variant: "default"
+                            });
+                            
+                            // Refresh the notification count
+                            fetchNotificationCount();
+                          } else {
+                            throw new Error(data.error || 'Failed to clear notifications');
+                          }
+                        } catch (error) {
+                          console.error('Error clearing notifications:', error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to clear notifications",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                      variant="outline"
+                      className="bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs sm:text-sm"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Clear Test Notifications
+                    </Button>
         </div>
                   
                   {isLoading ? (
