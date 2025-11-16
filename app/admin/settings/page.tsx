@@ -92,6 +92,7 @@ export default function AdminSettingsPage() {
   const { isLoading, user } = useAuth()
   const { toast } = useToast()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingSettings, setIsLoadingSettings] = useState(true)
   
@@ -137,6 +138,7 @@ export default function AdminSettingsPage() {
     if (user && user.role === "admin") {
       loadSettings()
       loadClients()
+      fetchNotificationCount()
     }
   }, [user])
 
@@ -191,6 +193,19 @@ export default function AdminSettingsPage() {
       })
     } finally {
       setIsLoadingClients(false)
+    }
+  }
+
+  // Fetch unread notifications count
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await fetch('/api/admin/notifications?unreadOnly=true');
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadNotifications(data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
     }
   }
 
@@ -456,13 +471,13 @@ export default function AdminSettingsPage() {
       </div>
       
       {/* Desktop sidebar */}
-      <AdminSidebar user={user} />
+      <AdminSidebar user={user} unreadNotifications={unreadNotifications} />
       
       {/* Mobile header */}
       <MobileHeader user={user} setIsMobileMenuOpen={setIsMobileMenuOpen} />
       
       {/* Mobile menu */}
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} user={user} />
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} user={user} unreadNotifications={unreadNotifications} />
 
       <main className="lg:pl-64 min-h-screen">
         <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-6xl">

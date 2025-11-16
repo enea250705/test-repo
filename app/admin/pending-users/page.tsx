@@ -47,6 +47,7 @@ export default function AdminPendingUsersPage() {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
@@ -62,6 +63,7 @@ export default function AdminPendingUsersPage() {
       router.push("/dashboard");
     } else {
       fetchPendingUsers();
+      fetchNotificationCount();
     }
   }, [user, router]);
 
@@ -91,6 +93,19 @@ export default function AdminPendingUsersPage() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fetch unread notifications count
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await fetch('/api/admin/notifications?unreadOnly=true');
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadNotifications(data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
     }
   };
 
@@ -202,13 +217,13 @@ export default function AdminPendingUsersPage() {
         </div>
         
         {/* Desktop sidebar */}
-        <AdminSidebar user={user} pendingUsers={pendingUsers} />
+        <AdminSidebar user={user} pendingUsers={pendingUsers} unreadNotifications={unreadNotifications} />
         
         {/* Mobile header */}
         <MobileHeader user={user} setIsMobileMenuOpen={setIsMobileMenuOpen} />
         
         {/* Mobile menu */}
-        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} user={user} pendingUsers={pendingUsers} />
+        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} user={user} pendingUsers={pendingUsers} unreadNotifications={unreadNotifications} />
 
         {/* Main content */}
         <main className="flex-1 container max-w-6xl mx-auto lg:pl-64 py-8 px-4 relative z-10">
