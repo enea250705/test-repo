@@ -85,7 +85,7 @@ export default function RootLayout({
             <Suspense fallback={<Loading />}>
               <div className="flex flex-col min-h-screen">
                 {children}
-££                <footer className="mt-auto bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4">
+                <footer className="mt-auto bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-4">
                   <div className="container mx-auto px-4 text-center">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Designed by{" "}
