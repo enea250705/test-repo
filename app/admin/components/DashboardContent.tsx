@@ -8,9 +8,7 @@ import {
   PlusCircle, 
   Clock, 
   AlertTriangle,
-  Dumbbell,
-  Bell,
-  ChevronRight
+  Dumbbell
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -44,14 +42,6 @@ interface ClassItem {
   bookings: number;
 }
 
-// Define types for notifications
-interface Notification {
-  id: string;
-  type: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-}
 
 // LoadingIndicator component
 function LoadingIndicator() {
@@ -65,12 +55,10 @@ function LoadingIndicator() {
 export default function DashboardContent() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch classes, clients, and notifications
+    // Fetch classes and clients
     const fetchData = async () => {
       try {
         setIsLoading(true);
@@ -83,18 +71,8 @@ export default function DashboardContent() {
         const clientsResponse = await fetch('/api/admin/clients');
         const clientsData = await clientsResponse.json();
         
-        // Fetch recent notifications
-        const notificationsResponse = await fetch('/api/admin/notifications?limit=5');
-        const notificationsData = await notificationsResponse.json();
-        
-        // Fetch unread count
-        const unreadResponse = await fetch('/api/admin/notifications?unreadOnly=true');
-        const unreadData = await unreadResponse.json();
-        
         setClasses(classesData.classes || []);
         setClients(clientsData.clients || []);
-        setRecentNotifications(notificationsData.notifications || []);
-        setUnreadNotifications(unreadData.unreadCount || 0);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -107,70 +85,6 @@ export default function DashboardContent() {
 
   return (
     <div className="space-y-8">
-      {/* Notifications Section */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="bg-black/40 backdrop-blur-md border-white/10 shadow-xl overflow-hidden md:col-span-2 lg:col-span-3">
-          <CardHeader className="border-b border-white/10 bg-black/30">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl text-white flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                Recent Class Cancellations
-              </CardTitle>
-              {unreadNotifications > 0 && (
-                <Badge className="bg-primary text-black">
-                  {unreadNotifications} unread
-                </Badge>
-              )}
-            </div>
-            <CardDescription className="text-white/70">
-              Track when clients cancel their class bookings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            {recentNotifications.length === 0 ? (
-              <div className="text-center py-8">
-                <Bell className="h-12 w-12 text-white/30 mx-auto mb-4" />
-                <p className="text-white/70">No cancellation notifications yet</p>
-                <p className="text-white/50 text-sm">Notifications will appear here when clients cancel classes</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentNotifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`flex items-start justify-between p-4 rounded-lg border transition-colors ${
-                      notification.read
-                        ? 'bg-white/5 border-white/10'
-                        : 'bg-primary/10 border-primary/20'
-                    }`}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        )}
-                        <span className="text-xs text-white/60">
-                          {new Date(notification.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-white text-sm">{notification.message}</p>
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-4 border-t border-white/10">
-                  <Link href="/admin/notifications">
-                    <Button variant="outline" className="w-full bg-transparent border-white/20 text-white hover:bg-white/10">
-                      View All Notifications
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
       <Tabs defaultValue="schedule" className="space-y-6">
         <div className="overflow-x-auto pb-2">
           <TabsList className="bg-black/50 p-1 rounded-lg border border-white/10 mx-auto flex justify-center w-full max-w-full sm:max-w-md overflow-x-auto">
