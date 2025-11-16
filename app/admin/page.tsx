@@ -33,7 +33,8 @@ import {
   CreditCard,
   Star,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ChevronRight
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"

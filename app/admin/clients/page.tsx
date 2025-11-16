@@ -193,13 +193,10 @@ export default function AdminClientsPage() {
   // Fetch unread notifications count
   const fetchNotificationCount = async () => {
     try {
-      console.log('fetchNotificationCount called');
       const response = await fetch('/api/admin/notifications?unreadOnly=true');
       if (response.ok) {
         const data = await response.json();
-        console.log('fetchNotificationCount response:', data);
         setUnreadNotifications(data.unreadCount);
-        console.log('setUnreadNotifications to:', data.unreadCount);
       }
     } catch (error) {
       console.error('Error fetching notification count:', error);

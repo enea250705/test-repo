@@ -21,8 +21,6 @@ import { LogoutButton } from "@/components/logout-button"
 export function AdminSidebar({ user, pendingUsers, unreadNotifications }: { user: any, pendingUsers?: any[], unreadNotifications?: number }) {
   const pathname = usePathname()
 
-  console.log('AdminSidebar - unreadNotifications:', unreadNotifications)
-
   const menuItems = [
     {
       href: "/admin",
@@ -145,8 +143,6 @@ export function MobileHeader({ user, setIsMobileMenuOpen }: { user: any, setIsMo
 // MobileMenu component - exported for reuse across all admin pages
 export function MobileMenu({ isOpen, onClose, user, pendingUsers, unreadNotifications }: { isOpen: boolean, onClose: () => void, user: any, pendingUsers?: any[], unreadNotifications?: number }) {
   const pathname = usePathname()
-
-  console.log('MobileMenu - unreadNotifications:', unreadNotifications)
 
   const menuItems = [
     {
