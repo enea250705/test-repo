@@ -62,9 +62,22 @@ export async function POST(
     }
 
     const activePackage = client.packages[0];
-    const daysRemaining = calculateDaysRemaining(activePackage.endDate);
+
+    // Safely handle packages that might not have an end date set
+    const packageEndDate =
+      activePackage.endDate ? new Date(activePackage.endDate) : null;
+    const daysRemaining = packageEndDate
+      ? calculateDaysRemaining(packageEndDate)
+      : 0;
 
     // Check if package is actually expiring soon
+    if (!packageEndDate) {
+      return NextResponse.json(
+        { error: "Package does not have an end date set" },
+        { status: 400 }
+      );
+    }
+
     if (daysRemaining > 7) {
       return NextResponse.json(
         { error: "Package is not expiring soon (more than 7 days remaining)" },
@@ -85,7 +98,7 @@ export async function POST(
           Package: ${activePackage.name}
           Classes Remaining: ${activePackage.classesRemaining} of ${activePackage.totalClasses}
           Days Remaining: ${daysRemaining}
-          Expiration Date: ${activePackage.endDate.toLocaleDateString()}
+          Expiration Date: ${packageEndDate.toLocaleDateString()}
 
           To continue enjoying our fitness classes, please consider renewing your membership before it expires.
           You can renew your membership by visiting our website or speaking with our staff.
@@ -104,7 +117,7 @@ export async function POST(
               <p><strong>Package:</strong> ${activePackage.name}</p>
               <p><strong>Classes Remaining:</strong> ${activePackage.classesRemaining} of ${activePackage.totalClasses}</p>
               <p><strong>Days Remaining:</strong> ${daysRemaining}</p>
-              <p><strong>Expiration Date:</strong> ${activePackage.endDate.toLocaleDateString()}</p>
+              <p><strong>Expiration Date:</strong> ${packageEndDate.toLocaleDateString()}</p>
             </div>
             <p>To continue enjoying our fitness classes, please consider renewing your membership before it expires.</p>
             <p>You can renew your membership by visiting our website or speaking with our staff.</p>
@@ -121,15 +134,23 @@ export async function POST(
       );
     }
 
-    // Record that a reminder was sent
-    await prisma.notification.create({
-      data: {
-        userId: clientId,
-        type: "package_expiry",
-        message: `Reminder sent for package expiring in ${daysRemaining} days`,
-        read: false,
-      },
-    });
+    // Record that a reminder was sent (do not fail the request if this logging fails)
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: clientId,
+          type: "package_expiry",
+          message: `Reminder sent for package expiring in ${daysRemaining} days`,
+          read: false,
+        },
+      });
+    } catch (notificationError) {
+      console.error(
+        "Failed to record package reminder notification:",
+        notificationError
+      );
+      // Intentionally ignore this error so the reminder API still succeeds
+    }
 
     return NextResponse.json({
       success: true,

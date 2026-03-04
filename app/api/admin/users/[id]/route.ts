@@ -38,13 +38,9 @@ export async function DELETE(
       const userPackages = await tx.package.findMany({ where: { userId: targetUserId } });
       const packageIds = userPackages.map((p) => p.id);
       if (packageIds.length > 0) {
-        // Delete package renewals referencing these packages
-        await tx.packageRenewal.deleteMany({ where: { packageId: { in: packageIds } } });
-        // Delete packages
+        // Delete packages (and any cascading relations configured in the DB)
         await tx.package.deleteMany({ where: { id: { in: packageIds } } });
       }
-      // Also delete any package renewals directly tied to user (safety)
-      await tx.packageRenewal.deleteMany({ where: { userId: targetUserId } });
 
       // Finally delete the user
       await tx.user.delete({ where: { id: targetUserId } });
