@@ -26,29 +26,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 });
     }
 
-    // Transaction: delete related data then user
-    await prisma.$transaction(async (tx) => {
-      // Delete bookings
-      await tx.booking.deleteMany({ where: { userId: targetUserId } });
-      // Delete waitlist entries
-      await tx.waitlist.deleteMany({ where: { userId: targetUserId } });
-      // Delete notifications
-      await tx.notification.deleteMany({ where: { userId: targetUserId } });
-      // Find user's packages
-      const userPackages = await tx.package.findMany({ where: { userId: targetUserId } });
-      const packageIds = userPackages.map((p) => p.id);
-      if (packageIds.length > 0) {
-        // Delete package renewals referencing these packages
-        await tx.packageRenewal.deleteMany({ where: { packageId: { in: packageIds } } });
-        // Delete packages
-        await tx.package.deleteMany({ where: { id: { in: packageIds } } });
-      }
-      // Also delete any package renewals directly tied to user (safety)
-      await tx.packageRenewal.deleteMany({ where: { userId: targetUserId } });
-
-      // Finally delete the user
-      await tx.user.delete({ where: { id: targetUserId } });
-    });
+    // Notification has no onDelete: Cascade in schema, so must be deleted manually first.
+    // All other relations (Booking, Waitlist, Package, PackageRenewal) have onDelete: Cascade
+    // on their User foreign keys, so they are removed automatically when the user is deleted.
+    await prisma.notification.deleteMany({ where: { userId: targetUserId } });
+    await prisma.user.delete({ where: { id: targetUserId } });
 
     return NextResponse.json({ success: true, message: 'User deleted successfully', userId: targetUserId });
   } catch (error) {
