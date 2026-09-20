@@ -5,7 +5,8 @@ import { z } from "zod"
 
 // Schema for validation
 const credentialCheckSchema = z.object({
-  email: z.string().email("Invalid email"),
+  // Trim before validating, same as the login route.
+  email: z.string().trim().email("Invalid email"),
   password: z.string().min(1, "Password is required"),
 })
 
@@ -30,13 +31,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: result.error.errors[0].message }, { status: 400 });
     }
     
-    const { email, password } = result.data;
+    const { email: rawEmail, password } = result.data;
+    const email = rawEmail.trim().toLowerCase();
     
-    // Find user by email
+    // Find user by email (case-insensitive, same as the login route)
     let user;
     try {
-      user = await prisma.user.findUnique({
-        where: { email }
+      user = await prisma.user.findFirst({
+        where: { email: { equals: email, mode: "insensitive" } }
       });
       console.log("User lookup result:", user ? "User found" : "User not found");
     } catch (dbError) {

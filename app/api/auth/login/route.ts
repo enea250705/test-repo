@@ -6,7 +6,8 @@ import { z } from "zod"
 
 // Schema for validation
 const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
+  // Trim before validating: mobile keyboards and autofill often append a space.
+  email: z.string().trim().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 })
 
@@ -31,13 +32,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: result.error.errors[0].message }, { status: 400 });
     }
     
-    const { email, password } = result.data;
+    const { email: rawEmail, password } = result.data;
+    // Normalize the email so stray whitespace or capitals from mobile keyboards
+    // and copy-paste do not turn a valid account into "user not found".
+    const email = rawEmail.trim().toLowerCase();
     
-    // Find user by email
+    // Find user by email (case-insensitive, to match accounts stored with any casing)
     let user;
     try {
-      user = await prisma.user.findUnique({
-        where: { email }
+      user = await prisma.user.findFirst({
+        where: { email: { equals: email, mode: "insensitive" } }
       });
       console.log("User lookup result:", user ? "User found" : "User not found");
     } catch (dbError) {

@@ -7,7 +7,8 @@ import { z } from "zod"
 // Schema for validation
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email"),
+  // Trim before validating: mobile keyboards and autofill often append a space.
+  email: z.string().trim().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   packageType: z.string().optional(),
 })
@@ -22,11 +23,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: result.error.errors[0].message }, { status: 400 })
     }
 
-    const { name, email, password, packageType } = result.data
+    const { name, email: rawEmail, password, packageType } = result.data
+    // Store emails normalized so login lookups always match what the user types.
+    const email = rawEmail.trim().toLowerCase()
     
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
+    // Check if user already exists (case-insensitive, to avoid duplicate accounts)
+    const existingUser = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } }
     })
 
     if (existingUser) {
