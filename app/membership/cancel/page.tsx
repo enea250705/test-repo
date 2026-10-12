@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, X, CalendarDays, Clock, AlertTriangle, Check } from 'lucide-react';
 import Link from 'next/link';
+import { formatValidUntil } from '@/lib/package-dates';
 
 interface BookedClass {
   id: string;
@@ -27,8 +28,7 @@ interface UserPackage {
   name: string;
   classesRemaining: number;
   totalClasses: number;
-  daysRemaining: number;
-  expirationDate: string;
+  endDate: string;
   active: boolean;
 }
 
@@ -124,10 +124,10 @@ export default function CancelMembershipPage() {
       }
 
       // Fetch user package
-      const packageResponse = await fetch('/api/user-package');
+      const packageResponse = await fetch('/api/packages/current', { cache: 'no-store' });
       if (packageResponse.ok) {
         const packageData = await packageResponse.json();
-        setUserPackage(packageData);
+        setUserPackage(packageData.package ?? null);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -277,8 +277,8 @@ export default function CancelMembershipPage() {
                   <p className="text-white/70 text-sm">Classes Remaining</p>
                 </div>
                 <div className="text-center p-4 bg-white/5 rounded-lg">
-                  <p className="text-2xl font-bold text-white">{userPackage.daysRemaining}</p>
-                  <p className="text-white/70 text-sm">Days Remaining</p>
+                  <p className="text-2xl font-bold text-white">{formatValidUntil(userPackage.endDate)}</p>
+                  <p className="text-white/70 text-sm">Valid until</p>
                 </div>
                 <div className="text-center p-4 bg-white/5 rounded-lg">
                   <Badge variant={userPackage.active ? "default" : "destructive"} className="text-sm">

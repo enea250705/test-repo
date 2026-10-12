@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth-middleware";
 import prisma from "@/lib/prisma";
-import { addDays } from "date-fns";
+import { calculatePackagePeriod } from "@/lib/package-dates";
 import { sendEmail } from "@/lib/email";
 
 // Define valid package types
@@ -81,17 +81,14 @@ export async function POST(
       starter: {
         name: "Starter Package: 4 Classes",
         totalClasses: 4,
-        durationDays: 30,
       },
       basic: {
         name: "Basic Package: 8 Classes",
         totalClasses: 8,
-        durationDays: 30,
       },
       premium: {
         name: "Premium Package: 12 Classes",
         totalClasses: 12,
-        durationDays: 30,
       },
     };
 
@@ -103,8 +100,7 @@ export async function POST(
       );
     }
 
-    const startDate = new Date();
-    const endDate = addDays(startDate, packageDetails[packageType].durationDays);
+    const { startDate, endDate } = calculatePackagePeriod();
     const totalClasses = packageDetails[packageType].totalClasses;
 
     // Create new package

@@ -27,6 +27,7 @@ import { LogoutButton } from "@/components/logout-button"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import { UserSidebar, UserMobileHeader, UserMobileMenu } from "./components/DashboardLayout"
+import { formatValidUntil } from "@/lib/package-dates"
 
 // Define loader component for when content is loading
 const LoadingIndicator = () => (
@@ -1179,9 +1180,6 @@ const DashboardPage = () => {
                         <CardContent className="space-y-6 p-6">
                           <div className="rounded-lg bg-gradient-to-br from-primary/30 to-primary/10 p-6 border border-white/10 text-center">
                             <div className="text-3xl font-bold text-white mb-1">{userPackage.name}</div>
-                            <div className="text-white/70 text-sm mb-2">
-                              Valid until {new Date(userPackage.endDate).toLocaleDateString()}
-                            </div>
                             {/* Show package price based on totalClasses */}
                             <div className="text-lg font-semibold text-white/90 mt-3 px-4 py-2 bg-black/20 rounded-lg border border-white/10">
                               {userPackage.totalClasses === 8 ? (
@@ -1208,17 +1206,9 @@ const DashboardPage = () => {
                       </div>
                     </div>
                             
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                                <span className="text-sm text-white/80">Time Remaining</span>
-                                <span className="text-sm font-medium text-white">{userPackage.daysRemaining} days</span>
-                      </div>
-                                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500 ease-out" 
-                                    style={{ width: `${(userPackage.daysRemaining / 30) * 100}%` }}
-                                  ></div>
-                            </div>
+                    <div className="flex items-center justify-between">
+                                <span className="text-sm text-white/80">Valid until:</span>
+                                <span className="text-sm font-medium text-white">{formatValidUntil(userPackage.endDate)}</span>
                           </div>
                         </div>
                           
@@ -1263,7 +1253,7 @@ const DashboardPage = () => {
                     <CalendarDays className="h-4 w-4" />
                         <AlertTitle>Membership Expiring Soon</AlertTitle>
                         <AlertDescription className="text-white/90">
-                          Your current plan expires in {userPackage.daysRemaining} days. Renew now to continue booking.
+                          Your current plan is valid until {formatValidUntil(userPackage.endDate)}. Renew now to continue booking.
                   </AlertDescription>
                     </Alert>
                   )}

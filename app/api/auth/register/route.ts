@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { calculatePackagePeriod } from "@/lib/package-dates"
 
 // Schema for validation
 const registerSchema = z.object({
@@ -66,18 +67,16 @@ export async function POST(request: Request) {
         console.log(`Creating package for new user ${user.email} with package type: ${packageType}`);
         
         // Define package types
-        const packageTypes: Record<string, { name: string; totalClasses: number; days: number }> = {
-          "8": { name: "8 CrossFit Classes / Month", totalClasses: 8, days: 30 },
-          "12": { name: "12 CrossFit Classes / Month", totalClasses: 12, days: 30 },
+        const packageTypes: Record<string, { name: string; totalClasses: number }> = {
+          "8": { name: "8 CrossFit Classes / Month", totalClasses: 8 },
+          "12": { name: "12 CrossFit Classes / Month", totalClasses: 12 },
         };
         
         if (packageType in packageTypes) {
           const packageDetails = packageTypes[packageType];
           
           // Calculate start and end dates
-          const startDate = new Date();
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + packageDetails.days);
+          const { startDate, endDate } = calculatePackagePeriod();
           
           // Create the new package
           userPackage = await prisma.package.create({

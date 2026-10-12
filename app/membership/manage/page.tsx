@@ -26,17 +26,17 @@ import {
   History
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatValidUntil } from '@/lib/package-dates';
 
 interface UserPackage {
   id: string;
   name: string;
   classesRemaining: number;
   totalClasses: number;
-  daysRemaining: number;
-  expirationDate: string;
+  startDate: string;
+  endDate: string;
   active: boolean;
-  purchaseDate: string;
-  price: number;
+  price?: number;
 }
 
 interface PackageOption {
@@ -88,35 +88,46 @@ export default function ManageMembershipPage() {
     try {
       setIsLoading(true);
       
+      // Fetch package prices
+      let prices: { package8Price?: string; package12Price?: string } = {};
+      const optionsResponse = await fetch('/api/packages/prices');
+      if (optionsResponse.ok) {
+        prices = (await optionsResponse.json()).prices ?? {};
+      }
+      const optionsData = {
+        package8Price: Number(prices.package8Price ?? 120),
+        package12Price: Number(prices.package12Price ?? 160),
+      };
+
       // Fetch user package
-      const packageResponse = await fetch('/api/user-package');
+      const packageResponse = await fetch('/api/packages/current', { cache: 'no-store' });
       if (packageResponse.ok) {
-        const packageData = await packageResponse.json();
-        setUserPackage(packageData);
+        const { package: pkg } = await packageResponse.json();
+        setUserPackage(pkg ? {
+          ...pkg,
+          price: pkg.totalClasses === 8 ? optionsData.package8Price
+            : pkg.totalClasses === 12 ? optionsData.package12Price
+            : undefined,
+        } : null);
       }
 
-      // Fetch package options
-      const optionsResponse = await fetch('/api/packages');
-      if (optionsResponse.ok) {
-        const optionsData = await optionsResponse.json();
-        setPackageOptions([
-          {
-            id: '8',
-            name: '8 Classes Package',
-            classes: 8,
-            price: optionsData.package8Price,
-            description: 'Perfect for getting started with 2 classes per week'
-          },
-          {
-            id: '12',
-            name: '12 Classes Package',
-            classes: 12,
-            price: optionsData.package12Price,
-            popular: true,
-            description: 'Most popular! Ideal for 3 classes per week'
-          }
-        ]);
-      }
+      setPackageOptions([
+        {
+          id: '8',
+          name: '8 Classes Package',
+          classes: 8,
+          price: optionsData.package8Price,
+          description: 'Perfect for getting started with 2 classes per week'
+        },
+        {
+          id: '12',
+          name: '12 Classes Package',
+          classes: 12,
+          price: optionsData.package12Price,
+          popular: true,
+          description: 'Most popular! Ideal for 3 classes per week'
+        }
+      ]);
 
       // Fetch usage stats
       const statsResponse = await fetch('/api/user-stats');
@@ -263,8 +274,8 @@ export default function ManageMembershipPage() {
                         <p className="text-white/70 text-sm">Classes Left</p>
                       </div>
                       <div className="text-center p-4 bg-white/5 rounded-lg">
-                        <p className="text-3xl font-bold text-white">{userPackage.daysRemaining}</p>
-                        <p className="text-white/70 text-sm">Days Left</p>
+                        <p className="text-2xl font-bold text-white">{formatValidUntil(userPackage.endDate)}</p>
+                        <p className="text-white/70 text-sm">Valid until</p>
                       </div>
                       <div className="text-center p-4 bg-white/5 rounded-lg">
                         <Badge variant={userPackage.active ? "default" : "destructive"} className="mb-2">
@@ -273,7 +284,7 @@ export default function ManageMembershipPage() {
                         <p className="text-white/70 text-sm">{userPackage.name}</p>
                       </div>
                       <div className="text-center p-4 bg-white/5 rounded-lg">
-                        <p className="text-2xl font-bold text-white">€{userPackage.price}</p>
+                        <p className="text-2xl font-bold text-white">{userPackage.price != null ? `€${userPackage.price}` : '—'}</p>
                         <p className="text-white/70 text-sm">Paid</p>
                       </div>
                     </div>
@@ -289,20 +300,20 @@ export default function ManageMembershipPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div className="flex justify-between">
                         <span className="text-white/70">Purchase Date:</span>
-                        <span className="text-white">{new Date(userPackage.purchaseDate).toLocaleDateString()}</span>
+                        <span className="text-white">{formatValidUntil(userPackage.startDate)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-white/70">Expires:</span>
-                        <span className="text-white">{new Date(userPackage.expirationDate).toLocaleDateString()}</span>
+                        <span className="text-white/70">Valid until:</span>
+                        <span className="text-white">{formatValidUntil(userPackage.endDate)}</span>
                       </div>
                     </div>
 
-                    {userPackage.daysRemaining <= 7 && userPackage.active && (
+                    {new Date(userPackage.endDate).getTime() - Date.now() <= 7 * 24 * 60 * 60 * 1000 && userPackage.active && (
                       <Alert className="bg-amber-900/30 border-amber-500/30">
                         <AlertTriangle className="h-4 w-4 text-amber-400" />
                         <AlertTitle className="text-amber-200">Membership Expiring Soon</AlertTitle>
                         <AlertDescription className="text-amber-200/90">
-                          Your membership expires in {userPackage.daysRemaining} days. Renew now to continue enjoying classes.
+                          Your membership is valid until {formatValidUntil(userPackage.endDate)}. Renew now to continue enjoying classes.
                         </AlertDescription>
                       </Alert>
                     )}

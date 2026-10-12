@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-middleware";
+import { calculatePackagePeriod } from "@/lib/package-dates";
 
 // GET user's active package
 export async function GET(request: Request) {
@@ -83,9 +84,9 @@ export async function POST(request: Request) {
     console.log(`Creating package of type: ${packageType} for user: ${user.email}`);
     
     // Define package types
-    const packageTypes: Record<string, { name: string; totalClasses: number; days: number; price: number }> = {
-      "8": { name: "8 CrossFit Classes / Month", totalClasses: 8, days: 30, price: 120 },
-      "12": { name: "12 CrossFit Classes / Month", totalClasses: 12, days: 30, price: 160 }
+    const packageTypes: Record<string, { name: string; totalClasses: number; price: number }> = {
+      "8": { name: "8 CrossFit Classes / Month", totalClasses: 8, price: 120 },
+      "12": { name: "12 CrossFit Classes / Month", totalClasses: 12, price: 160 }
     };
     
     if (!packageType || !(packageType in packageTypes)) {
@@ -108,27 +109,9 @@ export async function POST(request: Request) {
     
     const packageDetails = packageTypes[packageType];
     
-    // Calculate start and end dates
-    let startDate = new Date();
-    let endDate = new Date();
-    
-    // If user has an active package with remaining days, extend from current end date
-    if (currentPackage) {
-      const currentEndDate = new Date(currentPackage.endDate);
-      const now = new Date();
-      
-      if (currentEndDate > now) {
-        // Extend from current end date
-        startDate = currentEndDate;
-        endDate = new Date(startDate.getTime() + (packageDetails.days * 24 * 60 * 60 * 1000));
-      } else {
-        // Current package has expired, start from now
-        endDate.setDate(endDate.getDate() + packageDetails.days);
-      }
-    } else {
-      // No active package, start from now
-      endDate.setDate(endDate.getDate() + packageDetails.days);
-    }
+    // Packages run ~4 weeks ending on a Saturday. If the current package is still
+    // valid, the new one starts right after it ends.
+    const { startDate, endDate } = calculatePackagePeriod(currentPackage?.endDate);
     
     // First, deactivate any existing active packages for this user
     await prisma.package.updateMany({
