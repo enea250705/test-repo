@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-middleware"
 import { prisma } from "@/lib/prisma"
+import { hoursUntilClass } from "@/lib/class-time"
 import { sendEmail } from "@/lib/email"
 
 // PUT cancel a booking
@@ -39,15 +40,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     // Check if cancellation is within the allowed time window (8 hours before class)
-    const classDate = new Date(booking.class.date)
-    const [hours, minutes, period] = booking.class.time.split(/:|\s/)
-    let hour = parseInt(hours)
-    if (period === "PM" && hour !== 12) hour += 12
-    if (period === "AM" && hour === 12) hour = 0
-    classDate.setHours(hour, parseInt(minutes), 0, 0)
-
-    const now = new Date()
-    const hoursBeforeClass = (classDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+    const hoursBeforeClass = hoursUntilClass(booking.class.date, booking.class.time)
 
     if (hoursBeforeClass < 8) {
       return NextResponse.json({ 

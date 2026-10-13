@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth-middleware"
 import { prisma } from "@/lib/prisma"
+import { hoursUntilClass } from "@/lib/class-time"
 import { sendEmail } from "@/lib/email"
 
 // POST - Cancel a booking by class ID
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
         classId,
         class: {
           date: {
-            gte: new Date()
+            gte: new Date(new Date().toISOString().split("T")[0] + "T00:00:00.000Z")
           }
         }
       },
@@ -55,12 +56,7 @@ export async function POST(request: Request) {
     }
 
     // Check if cancellation is allowed (at least 8 hours before class)
-    const classDate = new Date(booking.class.date)
-    const [hours, minutes] = booking.class.time.split(':')
-    classDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
-    
-    const now = new Date()
-    const hoursBeforeClass = (classDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+    const hoursBeforeClass = hoursUntilClass(booking.class.date, booking.class.time)
 
     if (hoursBeforeClass < 8 && user.role !== "admin") {
       return NextResponse.json({ 
